@@ -49,3 +49,6 @@ If you need to restart/troubleshoot you can remove the venv and restart one.
 `deactivate`
 `rm -rf .venv`
 restart: `python -m venv .venv`
+
+Production example:
+`https://movie-watchlist-flask-tap.herokuapp.com/`

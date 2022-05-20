@@ -1,4 +1,5 @@
 import uuid
+import datetime
 from dataclasses import asdict
 
 from flask import (
@@ -10,7 +11,7 @@ from flask import (
     url_for,
     request,
 )
-from movie_library.forms import MovieForm
+from movie_library.forms import MovieForm, ExtendedMovieForm
 from movie_library.models import Movie
 
 
@@ -21,9 +22,16 @@ pages = Blueprint(
 
 @pages.route("/")
 def index():
+    # Lookup movies and store in movie_data
+    # Then unpack movies and create object using Movie class
+    # Creates a list of movies you can pass into render template
+    movie_data = current_app.db.movie.find({})
+    movies = [Movie(**movie) for movie in movie_data]
+
     return render_template(
         "index.html",
         title="Movies Watchlist",
+        movies_data=movies,
     )
 
 
@@ -46,6 +54,46 @@ def add_movie():
     return render_template(
         "new_movie.html", title="Movies Watchlist - Add Movie", form=form
     )
+
+
+@pages.get("/movie/<string:_id>")
+def movie(_id: str):
+    movie = Movie(**current_app.db.movie.find_one({"_id": _id}))
+    return render_template("movie_details.html", movie=movie)
+
+@pages.route("/edit/<string:_id>", methods=["GET", "POST"])
+def edit_movie(_id: str):
+    movie = Movie(**current_app.db.movie.find_one({"_id": _id}))
+    form = ExtendedMovieForm(obj=movie)
+    if form.validate_on_submit():
+        movie.title = form.title.data
+        movie.director = form.director.data
+        movie.year = form.year.data
+        movie.cast = form.cast.data
+        movie.series = form.series.data
+        movie.tags = form.tags.data
+        movie.description = form.description.data
+        movie.video_link = form.video_link.data
+
+        current_app.db.movie.update_one({"_id": movie._id}, {"$set": asdict(movie)})
+        return redirect(url_for(".movie", _id=movie._id))
+    return render_template("movie_form.html", movie=movie, form=form)
+
+@pages.get("/movie/<string:_id>/watch")
+def watch_today(_id):
+    current_app.db.movie.update_one(
+        {"_id": _id}, {"$set": {"last_watched": datetime.datetime.today()}}
+    )
+
+    return redirect(url_for(".movie", _id=_id))
+
+
+@pages.get("/movie/<string:_id>/rate")
+def rate_movie(_id):
+    rating = int(request.args.get("rating"))
+    current_app.db.movie.update_one({"_id": _id}, {"$set": {"rating": rating}})
+
+    return redirect(url_for(".movie", _id=_id))
 
 
 @pages.get("/toggle-theme")

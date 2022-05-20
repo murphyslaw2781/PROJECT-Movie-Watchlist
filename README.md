@@ -26,8 +26,26 @@ Create env files
 FLASK_APP=source
 FLASK_ENV=development
 ```
-.env
-DB creds to come unless you have them ready
+.env.example
+ Add your MongoDB URI below.
+ Make sure to replace:
+- mongodb_user for your database user
+- mongodb_password for your user's password
+- 127.0.0.1 for your server's hostname
+- 27017 for your server's port number
+- default_database for the database name you're connecting to
+
+`MONGODB_URI=mongodb://mongodb_user:mongodb_password/127.0.0.1:27017/default_database`
 
 .gitignore
 [Boilerplate gitignore](https://github.com/github/gitignore/blob/main/Python.gitignore)
+
+Deploying to Heroku
+check requirements.txt and add gunicorn
+Procfile: `web: gunicorn "<source_folder>:create_app()"`
+runtime.txt: `python-3.10.3`
+
+If you need to restart/troubleshoot you can remove the venv and restart one.
+`deactivate`
+`rm -rf .venv`
+restart: `python -m venv .venv`
